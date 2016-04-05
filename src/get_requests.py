@@ -85,10 +85,10 @@ def add_day_to_request_table(day, table,  trace_db = 'a2v', redirect_db = 'a2v',
                             wmf.webrequest
                         WHERE 
                             is_pageview
+                            AND webrequest_source = 'text'
                             AND normalized_host.project_class = 'wikipedia'
                             AND agent_type = 'user'
                             AND %(time_conditions)s
-                            AND hour = 1
                             AND LENGTH(REGEXP_EXTRACT(reflect('java.net.URLDecoder', 'decode', uri_path), '/wiki/(.*)', 1)) > 0
                         ) pv1
                     LEFT JOIN
@@ -123,7 +123,6 @@ def add_day_to_request_table(day, table,  trace_db = 'a2v', redirect_db = 'a2v',
                 'month': day_dt.month,
                 'day': day_dt.day
                 }
-
     exec_hive_stat2(query % params, priority = priority)
 
 

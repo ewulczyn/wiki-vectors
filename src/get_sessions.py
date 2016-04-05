@@ -66,7 +66,7 @@ def sessionize(requests):
 
 
 def filter_backlist(requests):
-    return [r for r in requests if ':' not in r['title'] and r['id'] != 'Q5296' ] 
+    return [r for r in requests if r['id'] != 'Q5296' ] 
 
 def scrub_dates(requests):
     for r in requests:

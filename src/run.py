@@ -7,10 +7,10 @@ python run.py \
     --get_sessions \
     --get_models \
     --start 2016-02-01 \
-    --stop  2016-02-01 \
-    --release test2 \
+    --stop  2016-02-07 \
+    --release 2016_02_01_2016_02_07 \
     --langs all,en \
-    --dims 10,20
+    --dims 50,100,300
 
 
 python run.py \
