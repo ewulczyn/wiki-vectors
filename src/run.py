@@ -118,7 +118,8 @@ if __name__ == '__main__':
                     cmds.append(cmd % args)
 
             for c in cmds:
-                Popen([c,])
+                print(c)
+                Popen([c,], shell=True)
 
         else:
             print('need langs and dims to get models')
