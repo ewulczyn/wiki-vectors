@@ -9,7 +9,7 @@ import json
 """
 Given a file of sessions, train a word2vec model where articles::sessions and words::sentences
 in the original formulation. We either learn embeddings for articles within a Wikipedia,
-or for Wikidata items,depending on the lang parameter. When lang=all, we learn Wikidata embeddings.
+or for Wikidata items,depending on the lang parameter. When lang=wikidata, we learn Wikidata embeddings.
 
 Usage:
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         args['dim'] = dim
         input_dir =  '/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
         m_output_dir = '/home/ellery/a2v/data/%(release)s/%(release)s_model_%(lang)s_%(dim)s' % args
-        v_output_dir = '/home/ellery/a2v/data/%(release)s/%(release)s_vectors_%(lang)s_%(dim)s' % args
+        v_output_dir = '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s' % args
         
         sentences = HDFSSentenceReader(input_dir, args['field'])
         

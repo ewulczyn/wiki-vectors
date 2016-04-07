@@ -1,15 +1,16 @@
 import argparse
 import os, sys
+from subprocess import Popen
 
 """
 python run.py \
     --get_requests \
     --get_sessions \
-    --get_models \
+    --get_vectors \
     --start 2016-02-01 \
     --stop  2016-02-07 \
     --release 2016_02_01_2016_02_07 \
-    --langs all,en \
+    --langs wikidata,en \
     --dims 50,100,300
 
 
@@ -22,12 +23,12 @@ python run.py \
 python run.py \
     --get_sessions \
     --release test2 \
-    --langs all,en 
+    --langs wikidata,en 
 
 python run.py \
-    --get_models \
+    --get_vectors \
     --release test2 \
-    --langs all,en \
+    --langs wikidata,en \
     --dims 10,20
 """
 
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--get_requests', default = False, action ='store_true')
     parser.add_argument('--get_sessions', default = False, action ='store_true' )
-    parser.add_argument('--get_models', default = False, action ='store_true' )
+    parser.add_argument('--get_vectors', default = False, action ='store_true' )
     parser.add_argument('--start', required = False )
     parser.add_argument('--stop', required = False)
     parser.add_argument('--release', required = True)
@@ -90,7 +91,9 @@ if __name__ == '__main__':
             sys.exit()
 
 
-    if args['get_models']:
+    if args['get_vectors']:
+
+        cmds = []
 
         if 'langs' in args and 'dims' in args:
             os.system("mkdir /home/ellery/a2v/data/%(release)s" % args)
@@ -105,14 +108,18 @@ if __name__ == '__main__':
 
             for lang in args['langs'].split(','):
                 args['lang'] = lang
-                if lang == 'all':
+                if lang == 'wikidata':
                     args['field'] = 'id'
                 else:
                     args['field'] = 'title'
 
                 for dim in args['dims'].split(','):
                     args['dim'] = dim 
-                    os.system(cmd % args)
+                    cmds.append(cmd % args)
+
+            for c in cmds:
+                Popen([c,])
+
         else:
             print('need langs and dims to get models')
             sys.exit()

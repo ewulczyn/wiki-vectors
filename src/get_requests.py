@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     db = args.db
-    table = args.release + '_requests'
+    table = args.release.replace('-', '_') + '_requests'
 
     create_request_table(args.db, table)
 

@@ -79,13 +79,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--request_db', default='a2v', help='hive db')
     parser.add_argument('--release', required=True, help='hive table')
-    parser.add_argument('--lang', required=True, default = 'all', help='all will use all langs')
+    parser.add_argument('--lang', required=True, default = 'wikidata', help='wikidata will use all langs')
 
 
 
     args = vars(parser.parse_args())
 
-    input_dir  = '/user/hive/warehouse/%(request_db)s.db/%(release)s_requests/*/*/*' % args
+    args['table'] = args['release'].replace('-', '_') + '_requests'
+
+    input_dir  = '/user/hive/warehouse/%(request_db)s.db/%(table)s/*/*/*' % args
     output_dir ='/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
     print (os.system('hadoop fs -rm -r ' + output_dir))
 
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     requests  = sc.textFile(input_dir) \
     .map(parse_requests)
     
-    if args['lang'] != 'all':
+    if args['lang'] != 'wikidata':
         requests = requests.map(lambda rs: [r for r in rs if r['lang'] == args['lang']])
 
     requests \
