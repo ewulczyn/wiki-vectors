@@ -118,7 +118,6 @@ if __name__ == '__main__':
                     cmds.append(cmd % args)
 
             for c in cmds:
-                print(c)
                 Popen([c,], shell=True)
 
         else:

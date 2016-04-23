@@ -1,15 +1,24 @@
 import argparse
 import os
+import sys
 
+"""
+python etl.py \
+--langs it
+"""
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--day', required = False )
     parser.add_argument('--langs', required = False,  help='comma seperated list of languages')
-    args = vars(parser.parse_args())
 
-    if 'day' in args:
+    args = vars(parser.parse_args())
+    print(args)
+
+
+    if args['day']:
+        sys.exit()
         cmd = """
         python /home/ellery/wmf/util/wikidata_utils.py \
             --day %(day)s \
@@ -30,15 +39,17 @@ if __name__ == '__main__':
             --day %(day)s \
             --extract_wills \
             --create_table \
-            --db a2v
+            --db prod
         """
         os.system(cmd % args)
 
-    if 'langs' in args:
+    if args['langs']:
 
         cmd = """
-        python /home/ellery/a2v/src/get_multilingual_redirect.py \
-            --langs %(langs)s
+        python /home/ellery/wmf/util/get_multilingual_prod_db.py \
+            --db prod \
+            --langs %(langs)s \
+            --tables page,redirect,page_props
         """
         os.system(cmd % args)
 

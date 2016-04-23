@@ -51,6 +51,10 @@ def parse_dates(requests):
     return clean
 
 def sessionize(requests):
+    """
+    Break request stream whenever
+    there is 30 min gap in requests
+    """
     sessions = []
     session = [requests[0]]
     for r in requests[1:]:
@@ -64,9 +68,42 @@ def sessionize(requests):
     sessions.append(session)
     return sessions 
 
+def filter_consecutive_articles(requests):
+    """
+    Looking at the data, there are a lot of
+    sessions with the same article
+    requested 2 times in a row. This
+    does not make sense for training, so
+    lets collapse them into 1 request
+    """
+    r = requests[0]
+    t = r['title']
+    clean_rs = [r,]
+    prev_t = t
+    for r in requests[1:]:
+        t = r['title']
+        if t == prev_t:
+            continue
+        else:
+            clean_rs.append(r)
+            prev_t = t
+    return clean_rs
 
-def filter_backlist(requests):
-    return [r for r in requests if r['id'] != 'Q5296' ] 
+
+def filter_blacklist(requests):
+    """
+    If the session contains an article in the blacklist,
+    drop the session. Currently, only the Main Page is
+    in the black list
+    """
+
+    black_list = set(['Q5296',])
+    for r in requests:
+        if r['id'] in black_list:
+            return False
+    return True
+
+
 
 def scrub_dates(requests):
     for r in requests:
@@ -80,18 +117,14 @@ if __name__ == '__main__':
     parser.add_argument('--request_db', default='a2v', help='hive db')
     parser.add_argument('--release', required=True, help='hive table')
     parser.add_argument('--lang', required=True, default = 'wikidata', help='wikidata will use all langs')
-
-
-
     args = vars(parser.parse_args())
 
     args['table'] = args['release'].replace('-', '_') + '_requests'
 
-    input_dir  = '/user/hive/warehouse/%(request_db)s.db/%(table)s/*/*/*' % args
+    input_dir  = '/user/hive/warehouse/%(request_db)s.db/%(table)s' % args
     output_dir ='/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-    print (os.system('hadoop fs -rm -r ' + output_dir))
+    print (os.system('hadoop fs -rm -r %s' % output_dir))
 
-    
     conf = SparkConf()
     conf.set("spark.app.name", 'a2v preprocess')
     sc = SparkContext(conf=conf, pyFiles=[])
@@ -103,10 +136,12 @@ if __name__ == '__main__':
         requests = requests.map(lambda rs: [r for r in rs if r['lang'] == args['lang']])
 
     requests \
-    .map(parse_dates) \
+    .filter(filter_blacklist) \
     .filter(lambda x: len(x) > 1) \
+    .map(filter_consecutive_articles) \
+    .filter(lambda x: len(x) > 1) \
+    .map(parse_dates) \
     .flatMap(sessionize) \
-    .map(filter_backlist) \
     .filter(lambda x: len(x) > 1) \
     .filter(lambda x: len(x) < 30) \
     .map(scrub_dates) \

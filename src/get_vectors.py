@@ -5,6 +5,7 @@ import time
 import argparse
 import subprocess
 import json
+import os
 
 """
 Given a file of sessions, train a word2vec model where articles::sessions and words::sentences
@@ -26,6 +27,7 @@ class HDFSSentenceReader(object):
         self.fname = fname + '/*'
         self.field = field
     def __iter__(self):
+        print('##### NEW CALL TO ITERATOR #####')
         cat = subprocess.Popen(["hadoop", "fs", "-text",self.fname ], stdout=subprocess.PIPE)
         for line in cat.stdout:
             rs = json.loads(line.strip())
@@ -41,6 +43,11 @@ if __name__ == '__main__':
     parser.add_argument('--dims', required=True)
 
     args = vars(parser.parse_args())
+
+
+    release_dir = '/home/ellery/a2v/data/%(release)s' % args
+    print(os.system('mkdir ' + release_dir) )
+
 
     for dim in args['dims'].split(','):
         args['dim'] = dim
