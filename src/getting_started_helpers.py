@@ -5,18 +5,18 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
 
-def get_tsne(embedding, pca_dim = 20, n_words=10000):
+def get_tsne(embedding, pca_dim = 20, n_items=10000):
     """
     TSNE dimensionality reduction.
     
     The TSNE algorithm is quite slow, so we:
     
-    1. only use the first n_words from the embedding
+    1. only use the first n_items from the embedding
     2. reduce embedding dimensionality via PCA
     3. run TSNE on reduced embedding matrix
     
     """
-    X = embedding.E[:n_words]
+    X = embedding.E[:n_items]
     pca = PCA(n_components=pca_dim)
     X = pca.fit_transform(X)
     tsne = TSNE(n_components=2, random_state=0)
