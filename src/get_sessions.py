@@ -3,6 +3,8 @@ import json
 import argparse
 import datetime
 import os
+import time
+import subprocess
 
 
 """
@@ -25,7 +27,7 @@ spark-submit \
     --queue priority \
 get_sessions.py \
     --release test \
-    --lang en \
+    --lang en 
 """
 
 def parse_requests(requests):
@@ -121,19 +123,40 @@ if __name__ == '__main__':
 
     args['table'] = args['release'].replace('-', '_') + '_requests'
 
-    input_dir  = '/user/hive/warehouse/%(request_db)s.db/%(table)s' % args
-    output_dir ='/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-    print (os.system('hadoop fs -rm -r %s' % output_dir))
+    # create base dirs
+    base_dir = '/user/ellery/a2v/data/%(release)s' % args
+    print(os.system('hadoop fs -mkdir ' + base_dir) )
+    local_base_dir = '/home/ellery/a2v/data/%(release)s' % args
+    print(os.system('mkdir ' + local_base_dir) )
+
+
+    # define io paths
+    args['input_dir']  = '/user/hive/warehouse/%(request_db)s.db/%(table)s' % args
+    args['output_dir'] =        '/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
+    args['local_output_file'] = '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
+    args['local_output_dir'] =  '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s_dir' % args
+
+    # clean up old data
+    print (os.system('hadoop fs -rm -r %(output_dir)s' % args))
+    print(os.system('rm -rf %(local_output_file)s' % args))
+    print(os.system('rm -rf %(local_output_dir)s' % args))
 
     conf = SparkConf()
     conf.set("spark.app.name", 'a2v preprocess')
     sc = SparkContext(conf=conf, pyFiles=[])
 
-    requests  = sc.textFile(input_dir) \
+    
+    requests  = sc.textFile(args['input_dir']) \
     .map(parse_requests)
     
     if args['lang'] != 'wikidata':
         requests = requests.map(lambda rs: [r for r in rs if r['lang'] == args['lang']])
+
+
+    if args['lang'] == 'wikidata':
+        to_str = lambda x: ' '.join([e['id'] for e in x])
+    else:
+        to_str = lambda x: ' '.join([e['title'] for e in x])
 
     requests \
     .filter(filter_blacklist) \
@@ -145,5 +168,10 @@ if __name__ == '__main__':
     .filter(lambda x: len(x) > 1) \
     .filter(lambda x: len(x) < 30) \
     .map(scrub_dates) \
-    .map(lambda x: json.dumps(x)) \
-    .saveAsTextFile (output_dir, compressionCodecClass= "org.apache.hadoop.io.compress.GzipCodec")
+    .map(to_str) \
+    .saveAsTextFile (args['output_dir'], compressionCodecClass = "org.apache.hadoop.io.compress.GzipCodec")
+
+    # transfer data to local
+    os.system('hadoop fs -copyToLocal %(output_dir)s %(local_output_dir)s' % args)
+    os.system('cat %(local_output_dir)s/* | gunzip > %(local_output_file)s' % args)
+    os.system('rm -rf %(local_output_dir)s' % args)

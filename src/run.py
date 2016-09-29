@@ -103,22 +103,17 @@ if __name__ == '__main__':
                 --release %(release)s \
                 --lang %(lang)s \
                 --dims %(dim)s \
-                --field %(field)s
             """
 
             for lang in args['langs'].split(','):
                 args['lang'] = lang
-                if lang == 'wikidata':
-                    args['field'] = 'id'
-                else:
-                    args['field'] = 'title'
-
                 for dim in args['dims'].split(','):
                     args['dim'] = dim 
                     cmds.append(cmd % args)
 
             for c in cmds:
-                Popen([c,], shell=True)
+                #Popen([c,], shell=True)
+                os.system(c)
 
         else:
             print('need langs and dims to get models')

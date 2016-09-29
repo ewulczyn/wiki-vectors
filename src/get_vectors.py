@@ -1,4 +1,3 @@
-import gensim
 import scipy
 import multiprocessing as mp
 import time
@@ -17,21 +16,8 @@ Usage:
 python /home/ellery/a2v/src/get_vectors.py \
     --release test \
     --lang en \
-    --field id \
-    --dims 10 
+    --dims 100 
 """ 
-
-
-class HDFSSentenceReader(object):
-    def __init__(self, fname, field):
-        self.fname = fname + '/*'
-        self.field = field
-    def __iter__(self):
-        print('##### NEW CALL TO ITERATOR #####')
-        cat = subprocess.Popen(["hadoop", "fs", "-text",self.fname ], stdout=subprocess.PIPE)
-        for line in cat.stdout:
-            rs = json.loads(line.strip())
-            yield [r[self.field] for r in rs]
 
 
 if __name__ == '__main__':
@@ -39,34 +25,36 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--release', required=True)
     parser.add_argument('--lang', required=True)
-    parser.add_argument('--field', required=True)
     parser.add_argument('--dims', required=True)
 
     args = vars(parser.parse_args())
 
-
-    release_dir = '/home/ellery/a2v/data/%(release)s' % args
-    print(os.system('mkdir ' + release_dir) )
-
-
     for dim in args['dims'].split(','):
         args['dim'] = dim
-        input_dir =  '/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-        m_output_dir = '/home/ellery/a2v/data/%(release)s/%(release)s_model_%(lang)s_%(dim)s' % args
-        v_output_dir = '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s' % args
+        args['input_dir'] =  '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
+        args['vectors_output_file'] =        '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s' % args
+        args['binary_vectors_output_file'] = '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s.bin' % args
         
-        sentences = HDFSSentenceReader(input_dir, args['field'])
         
         t1= time.time()
 
-        model = gensim.models.Word2Vec( \
-                sentences, \
-                workers=10, \
-                min_count=50, \
-                size=int(args['dim'])
-                )
+        cmd = """
+        nice ~/word2vec/word2vec \
+        -train %(input_dir)s \
+        -output %(vectors_output_file)s \
+        -size %(dim)s \
+        -threads 18 \
+        -min-count 50 \
+        -binary 0 \
+        -cbow 1
+        """
+        os.system(cmd % args)
+
+        cmd = """
+        ~/convertvec/convertvec txt2bin %(vectors_output_file)s %(binary_vectors_output_file)s 
+        """
+        os.system(cmd % args)
+
+
         t2= time.time()
         print(t2-t1)
-
-        model.save(m_output_dir)
-        model.save_word2vec_format(v_output_dir)
