@@ -4,7 +4,8 @@ import sys
 
 """
 python etl.py \
---langs it
+--day 20160926 \
+--langs en,ja,de,es,ru,fr,it,zh,pt,pl,tr,ar,nl,id,sv,ko,cs,fa,fi,vi
 """
 
 if __name__ == '__main__':
@@ -18,11 +19,10 @@ if __name__ == '__main__':
 
 
     if args['day']:
-        sys.exit()
         cmd = """
         python /home/ellery/wmf/util/wikidata_utils.py \
             --day %(day)s \
-            --dowload_dump
+            --download_dump
         """
         os.system(cmd % args)
 

@@ -19,7 +19,7 @@ def get_requests(start, stop, table,  trace_db = 'a2v', prod_db = 'prod', priori
 
     query = """
     SET mapreduce.input.fileinputformat.split.maxsize=200000000;
-
+    SET hive.mapred.mode=nonstrict;
 
 
     -- get pageviews, resolve redirects, add wikidata ids
@@ -44,8 +44,8 @@ def get_requests(start, stop, table,  trace_db = 'a2v', prod_db = 'prod', priori
             ts, 
             pv1.lang,
             CASE
-                WHEN rd_to IS NULL THEN raw_title
-                ELSE rd_to
+                WHEN rd_to_page_title IS NULL THEN raw_title
+                ELSE rd_to_page_title
             END AS title
         FROM
             (SELECT
@@ -67,14 +67,20 @@ def get_requests(start, stop, table,  trace_db = 'a2v', prod_db = 'prod', priori
                 AND LENGTH(REGEXP_EXTRACT(reflect('java.net.URLDecoder', 'decode', uri_path), '/wiki/(.*)', 1)) > 0
             ) pv1
         LEFT JOIN
-            %(prod_db)s.redirect r
-        ON pv1.raw_title = r.rd_from
-        AND pv1.lang = r.lang
+            (SELECT
+                *
+            FROM
+                prod.redirect 
+            WHERE
+                rd_from_page_namespace = 0
+                AND rd_to_page_namespace = 0
+                AND lang RLIKE '.*'
+            ) r
+        ON
+            pv1.raw_title = r.rd_from_page_title AND pv1.lang = r.lang
         ) pv2
     INNER JOIN
-        %(prod_db)s.wikidata_will w
-    ON pv2.title = w.title
-    AND pv2.lang = w.lang;
+        %(prod_db)s.wikidata_will w ON pv2.title = w.title AND pv2.lang = w.lang;
 
 
     DROP TABLE IF EXISTS %(trace_db)s.%(trace_table)s_editors;
@@ -135,7 +141,7 @@ def get_requests(start, stop, table,  trace_db = 'a2v', prod_db = 'prod', priori
     GROUP BY
         id;
 
-
+    -- remove disambiguation pages and pages with colon in title
     DROP TABLE IF EXISTS %(trace_db)s.%(trace_table)s_eligible_reader_pageviews;
     CREATE TABLE %(trace_db)s.%(trace_table)s_eligible_reader_pageviews AS
     SELECT pv.*
@@ -159,6 +165,7 @@ def get_requests(start, stop, table,  trace_db = 'a2v', prod_db = 'prod', priori
         WHERE
             propname = 'disambiguation'
             AND lang RLIKE '.*'
+            AND page_namespace = 0
         GROUP BY
             lang,
             page_title

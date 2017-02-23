@@ -126,15 +126,15 @@ if __name__ == '__main__':
     # create base dirs
     base_dir = '/user/ellery/a2v/data/%(release)s' % args
     print(os.system('hadoop fs -mkdir ' + base_dir) )
-    local_base_dir = '/home/ellery/a2v/data/%(release)s' % args
+    local_base_dir = '/a/ellery/a2v/data/%(release)s' % args
     print(os.system('mkdir ' + local_base_dir) )
 
 
     # define io paths
     args['input_dir']  = '/user/hive/warehouse/%(request_db)s.db/%(table)s' % args
     args['output_dir'] =        '/user/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-    args['local_output_file'] = '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-    args['local_output_dir'] =  '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s_dir' % args
+    args['local_output_file'] = '/a/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
+    args['local_output_dir'] =  '/a/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s_dir' % args
 
     # clean up old data
     print (os.system('hadoop fs -rm -r %(output_dir)s' % args))

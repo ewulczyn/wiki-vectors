@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     for dim in args['dims'].split(','):
         args['dim'] = dim
-        args['input_dir'] =  '/home/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
-        args['vectors_output_file'] =        '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s' % args
-        args['binary_vectors_output_file'] = '/home/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s.bin' % args
+        args['input_dir'] =  '/a/ellery/a2v/data/%(release)s/%(release)s_sessions_%(lang)s' % args
+        args['vectors_output_file'] =        '/a/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s' % args
+        args['binary_vectors_output_file'] = '/a/ellery/a2v/data/%(release)s/%(release)s_%(lang)s_%(dim)s.bin' % args
         
         
         t1= time.time()
@@ -46,8 +46,14 @@ if __name__ == '__main__':
         -threads 18 \
         -min-count 50 \
         -binary 0 \
-        -cbow 1
+        -cbow 0 \
+        -iter 10 \
+        -negative 3 \
+        -sample 0.001 \
+        -window 6
         """
+
+        print(cmd % args)
         os.system(cmd % args)
 
         cmd = """
